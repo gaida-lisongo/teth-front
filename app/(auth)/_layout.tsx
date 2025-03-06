@@ -1,6 +1,19 @@
 import { Stack } from 'expo-router';
+import { useEffect } from 'react';
+import { useSound } from '@/hooks/useSound';
 
 export default function AuthLayout() {
+  const { playSound, stopSound } = useSound(require('@/assets/sounds/auth.wav'), { 
+    loop: true 
+  });
+
+  useEffect(() => {
+    playSound();
+    return () => {
+      stopSound();
+    };
+  }, []);
+
   return (
     <Stack>
       <Stack.Screen 
@@ -9,27 +22,30 @@ export default function AuthLayout() {
           headerShown: false 
         }} 
       />
-      {/* <Stack.Screen 
+      <Stack.Screen 
         name="login" 
         options={{ 
           title: 'Connexion',
-          headerBackTitle: 'Retour'
+          headerBackTitle: 'Retour',
+          headerShown: false
         }} 
       />
       <Stack.Screen 
         name="register" 
         options={{ 
           title: 'Inscription',
-          headerBackTitle: 'Retour'
+          headerBackTitle: 'Retour',
+          headerShown: false
         }} 
       />
       <Stack.Screen 
         name="forgot-password" 
         options={{ 
           title: 'Mot de passe oublié',
-          headerBackTitle: 'Retour'
+          headerBackTitle: 'Retour',
+          headerShown: false
         }} 
-      /> */}
+      />
     </Stack>
   );
 }
