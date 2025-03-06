@@ -9,7 +9,7 @@ export default function AuthLayout() {
           headerShown: false 
         }} 
       />
-      <Stack.Screen 
+      {/* <Stack.Screen 
         name="login" 
         options={{ 
           title: 'Connexion',
@@ -29,7 +29,7 @@ export default function AuthLayout() {
           title: 'Mot de passe oublié',
           headerBackTitle: 'Retour'
         }} 
-      />
+      /> */}
     </Stack>
   );
 }
