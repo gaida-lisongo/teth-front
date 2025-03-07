@@ -1,22 +1,45 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Alert } from 'react-native';
 import { router } from 'expo-router';
 import * as Animatable from 'react-native-animatable';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CustomButton } from '@/components/buttons';
 import { FontAwesome } from '@expo/vector-icons';
+import { useAuth } from '@/contexts';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { forgotPassword } = useAuth();
 
   const handleSubmit = async () => {
-    setIsLoading(true);
-    // TODO: Implémenter la logique de récupération
-    setTimeout(() => {
+    if (!email || !email.includes('@')) {
+      Alert.alert('Erreur', 'Veuillez entrer une adresse email valide');
+      return;
+    }
+    
+
+    try {
+      setIsLoading(true);
+      await forgotPassword(email);
+      Alert.alert(
+        'Succès',
+        'Un mot de passe a été envoyé à votre adresse email.',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.push('/login')
+          }
+        ]
+      );
+    } catch (error) {
+      Alert.alert(
+        'Erreur',
+        'Impossible de réinitialiser le mot de passe. Veuillez réessayer.'
+      );
+    } finally {
       setIsLoading(false);
-      router.back();
-    }, 2000);
+    }
   };
 
   return (
