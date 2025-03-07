@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Link, router } from 'expo-router';
 import * as Animatable from 'react-native-animatable';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CustomButton } from '@/components/buttons';
 import { FontAwesome } from '@expo/vector-icons';
 import { TermsModal } from '@/components/modals/TermsModal';
+import { useAuth } from '@/contexts';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -17,9 +18,67 @@ export default function Register() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [termsModalVisible, setTermsModalVisible] = useState(false);
+  const { register } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const validateForm = () => {
+    if (!formData.pseudo || !formData.email || !formData.phone || !formData.password || !formData.confirmPassword) {
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
+      return false;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      Alert.alert('Erreur', 'Les mots de passe ne correspondent pas');
+      return false;
+    }
+
+    if (!formData.email.includes('@')) {
+      Alert.alert('Erreur', "Format d'email invalide");
+      return false;
+    }
+
+    if (!formData.phone.startsWith('+243')) {
+      Alert.alert('Erreur', 'Le numéro doit commencer par +243');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleRegister = async () => {
+    if (!validateForm()) return;
+
+    try {
+      setIsLoading(true);
+
+      await register({
+        pseudo: formData.pseudo,
+        email: formData.email,
+        phone: formData.phone,
+        mdp: formData.password,
+      });
+
+      Alert.alert(
+        'Succès', 
+        'Inscription réussie ! Vous avez reçu 3 pièces gratuites.',
+        [{ text: 'OK' }]
+      );
+        
+      // Redirection vers les tabs après connexion réussie
+      router.replace('/(tabs)/home');
+    } catch (error) {
+      Alert.alert(
+        'Erreur',
+        "Une erreur est survenue lors de l'inscription. Veuillez réessayer."
+      );
+      console.error('Register error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -127,10 +186,11 @@ export default function Register() {
 
           <CustomButton
             title="S'inscrire"
-            onPress={() => {}}
+            onPress={handleRegister}
             variant="primary"
             size="large"
             style={styles.registerButton}
+            isLoading={isLoading}
           />
 
           <View style={styles.loginContainer}>

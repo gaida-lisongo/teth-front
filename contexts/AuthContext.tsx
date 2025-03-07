@@ -1,118 +1,145 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { User, AuthContextType, LoginCredentials, RegisterData } from '../types';
+import { User, AuthContextType, LoginCredentials, RegisterData, ApiResponse, AuthResponse, RegisterResponse, ForgotPasswordResponse } from '../types';
+import { authApi } from '../api';
+import { router } from 'expo-router';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-    const [user, setUser] = useState<User | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-    useEffect(() => {
-        checkAuthStatus();
-    }, []);
+  // Ajout de logs pour le debug
+  useEffect(() => {
+    console.log('=== AuthContext State ===');
+    console.log('User:', user);
+    console.log('isAuthenticated:', isAuthenticated);
+    console.log('isLoading:', isLoading);
+  }, [user, isAuthenticated, isLoading]);
 
-    const checkAuthStatus = async () => {
-        try {
-            const userData = await AsyncStorage.getItem('user');
-            if (userData) {
-                setUser(JSON.parse(userData));
-                setIsAuthenticated(true);
-            }
-        } catch (error) {
-            console.error('Error checking auth status:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
 
-    const login = async (credentials: LoginCredentials) => {
-        try {
-            // TODO: Remplacer avec un vrai appel API
-            const mockUser: User = {
-                id: '1',
-                pseudo: credentials.pseudo,
-                email: 'user@example.com',
-                phone: '+243123456789',
-                balance: 0,
-                pieces: 3,
-                stats: {
-                    gamesPlayed: 0,
-                    correctAnswers: 0,
-                    wrongAnswers: 0
-                }
-            };
+  const checkAuthStatus = async () => {
+    console.log('Checking auth status...');
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const userData = await AsyncStorage.getItem('user');
+      
+      console.log('Stored token:', token);
+      console.log('Stored user data:', userData);
 
-            await AsyncStorage.setItem('user', JSON.stringify(mockUser));
-            setUser(mockUser);
-            setIsAuthenticated(true);
-        } catch (error) {
-            throw new Error('Échec de la connexion');
-        }
-    };
+      if (token && userData) {
+        setUser(JSON.parse(userData));
+        setIsAuthenticated(true);
+        console.log('Auth status: Authenticated');
+        // Redirection vers les tabs après connexion réussie
+        router.replace('/(tabs)/home');
+      } else {
+        console.log('Auth status: Not authenticated');
+        router.replace('/(auth)/welcome');
+      }
+    } catch (error) {
+      console.error('Error checking auth status:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    const register = async (data: RegisterData) => {
-        try {
-            // TODO: Remplacer avec un vrai appel API
-            const newUser: User = {
-                id: Date.now().toString(),
-                pseudo: data.pseudo,
-                email: data.email,
-                phone: data.phone,
-                balance: 0,
-                pieces: 3, // 3 pièces offertes à l'inscription
-                stats: {
-                    gamesPlayed: 0,
-                    correctAnswers: 0,
-                    wrongAnswers: 0
-                }
-            };
+  const login = async (credentials: LoginCredentials) => {
+    try {
+      const response: ApiResponse<AuthResponse> = await authApi.login(credentials);
+      
+      if (response.status === 200 && response.data.token) {
+        await AsyncStorage.setItem('token', response.data.token);
+        await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
 
-            await AsyncStorage.setItem('user', JSON.stringify(newUser));
-            setUser(newUser);
-            setIsAuthenticated(true);
-        } catch (error) {
-            throw new Error("Échec de l'inscription");
-        }
-    };
+        console.log('User:', response.data.user);
+        setUser(response.data.user);
+        setIsAuthenticated(true);
+        
+        // Redirection vers les tabs après connexion réussie
+        router.replace('/(tabs)/home');
+      } else {
+        throw new Error(response.message || 'Échec de la connexion');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
+  };
 
-    const forgotPassword = async (email: string) => {
-        // TODO: Implémenter la récupération du mot de passe
-        throw new Error('Not implemented');
-    };
+  const register = async (data: RegisterData) => {
+    try {
+      const response: RegisterResponse = await authApi.register(data);
+      console.log('Register response:', response);
+      if (response.status === 201 && response.data.token) {
+        await AsyncStorage.setItem('token', response.data.token);
+        await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
 
-    const logout = async () => {
-        try {
-            await AsyncStorage.removeItem('user');
-            setUser(null);
-            setIsAuthenticated(false);
-        } catch (error) {
-            throw new Error('Échec de la déconnexion');
-        }
-    };
+        console.log('User:', response.data.user);
+        setUser(response.data.user);
+        setIsAuthenticated(true);
+      } else {
+        throw new Error(response.message || 'Échec de la connexion');
+      }
+    } catch (error) {
+      throw new Error("Échec de l'inscription");
+    }
+  };
 
-    return (
-        <AuthContext.Provider 
-            value={{ 
-                user, 
-                isLoading, 
-                isAuthenticated, 
-                login, 
-                register, 
-                forgotPassword, 
-                logout 
-            }}
-        >
-            {children}
-        </AuthContext.Provider>
-    );
+  const forgotPassword = async (email: string) => {
+    try {
+      const response: ForgotPasswordResponse = await authApi.forgotPassword(email);
+      console.log('Forgot response:', response);
+      if (response.status === 200) {
+        return response.data.message;
+      } else {
+        throw new Error(response.message || 'Échec de la connexion');
+      }
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      throw new Error("Échec lors de la récupération du compte");
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('user');
+      setUser(null);
+      setIsAuthenticated(false);
+      router.replace('/(auth)/welcome');
+    } catch (error) {
+      console.error('Logout error:', error);
+      throw new Error('Échec de la déconnexion');
+    }
+  };
+
+  return (
+    <AuthContext.Provider 
+      value={{ 
+        user, 
+        isLoading, 
+        isAuthenticated, 
+        login, 
+        register, 
+        forgotPassword, 
+        logout 
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

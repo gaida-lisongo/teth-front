@@ -1,15 +1,37 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { Link, router } from 'expo-router';
 import * as Animatable from 'react-native-animatable';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CustomButton } from '@/components/buttons';
 import { FontAwesome } from '@expo/vector-icons';
+import { useAuth } from '@/contexts';
 
 export default function Login() {
   const [pseudo, setPseudo] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
+
+  const handleLogin = async () => {
+    if (!pseudo || !password) {
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      await login({ pseudo, password });
+    } catch (error) {
+      Alert.alert(
+        'Erreur de connexion',
+        'Pseudo ou mot de passe incorrect'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <LinearGradient
@@ -70,10 +92,11 @@ export default function Login() {
 
         <CustomButton
           title="Se connecter"
-          onPress={() => {}}
+          onPress={handleLogin}
           variant="primary"
           size="large"
           style={styles.loginButton}
+          isLoading={isLoading}
         />
 
         <View style={styles.registerContainer}>

@@ -1,59 +1,106 @@
 import React from 'react';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, Tabs } from 'expo-router';
-import { Pressable } from 'react-native';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import { Tabs } from 'expo-router';
+import { StyleSheet, View } from 'react-native';
+import { BlurView } from 'expo-blur';
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
-
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
+  name: React.ComponentProps<typeof FontAwesome5>['name'];
   color: string;
 }) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+  return <FontAwesome5 size={24} style={{ marginBottom: -3 }} {...props} />;
 }
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
+      initialRouteName="home"
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
-        headerShown: useClientOnlyValue(false, true),
-      }}>
+        tabBarActiveTintColor: '#041cd7',
+        tabBarInactiveTintColor: '#8892b0',
+        headerShown: false,
+        tabBarStyle: styles.tabBar,
+        tabBarBackground: () => (
+          <BlurView 
+            intensity={100} 
+            tint="light" 
+            style={StyleSheet.absoluteFill} 
+          />
+        ),
+        tabBarLabelStyle: styles.tabBarLabel,
+      }}
+    >
       <Tabs.Screen
-        name="index"
+        name="profile"
         options={{
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="info-circle"
-                    size={28}
-                    color={Colors[colorScheme ?? 'light'].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
+          title: 'Profile',
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon name="user-circle" color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="home"
+
         options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          title: 'Accueil',
+          tabBarIcon: ({ color }) => (
+            <View style={styles.homeIconContainer}>
+              <TabBarIcon name="home" color="#fff" />
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="transactions"
+        options={{
+          title: 'Transactions',
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon name="wallet" color={color} />
+          ),
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBar: {
+    position: 'absolute',
+    bottom: 25,
+    left: 20,
+    right: 20,
+    elevation: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 15,
+    height: 70,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.5,
+  },
+  tabBarLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  homeIconContainer: {
+    width: 60,
+    height: 60,
+    backgroundColor: '#041cd7',
+    borderRadius: 30,
+    marginBottom: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#041cd7',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.5,
+    elevation: 5,
+  },
+});

@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions, Image } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import * as Animatable from 'react-native-animatable';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CustomButton } from '@/components/buttons';
@@ -14,6 +14,7 @@ export default function Welcome() {
   useEffect(() => {
     fadeInDown.current?.fadeInDown(1500);
     fadeInUp.current?.fadeInUp(1500);
+
   }, []);
 
   return (
@@ -48,7 +49,7 @@ export default function Welcome() {
           <View style={styles.buttonContainer}>
             <CustomButton
               title="Commencer l'aventure"
-              onPress={() => {}}
+              onPress={() => router.push('/onboarding')}
               variant="primary"
               size="large"
               style={styles.mainButton}
