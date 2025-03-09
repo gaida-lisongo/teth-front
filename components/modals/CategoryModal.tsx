@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { 
   Modal, 
   View, 
@@ -7,17 +7,25 @@ import {
   TouchableOpacity, 
   Dimensions,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable';
 import { MOCK_CATEGORIES } from '@/constants/data';
+import { API_URL } from '@/api/config';
 
 const { width, height } = Dimensions.get('window');
 
 interface CategoryModalProps {
   visible: boolean;
   onClose: () => void;
-  onSelectCategory: (categoryId: string) => void;
+  onSelectCategory: (categorie : {
+    id: string;
+    nom: string;
+    description: string;
+    icon: string;
+    color: string;
+  }) => void;
 }
 
 export const CategoryModal: React.FC<CategoryModalProps> = ({
@@ -25,12 +33,31 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
   onClose,
   onSelectCategory,
 }) => {
+  const [categories, setCategories] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
-    console.log('CategoryModal mounted');
-    return () => {
-      console.log('CategoryModal unmounted');
+    const fetchCategories = async () => {
+      try {
+        const request = await fetch(`${API_URL}/home/categories`);
+        const response = await request.json();
+        setCategories(response.data);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
+
+    fetchCategories();
   }, []);
+
+  const memoizedCategories = useMemo(() => {
+    return categories.map(category => ({
+      ...category,
+      key: category.id // Assurez-vous d'avoir un id unique
+    }));
+  }, [categories]);
 
   return (
     <Modal
@@ -52,26 +79,31 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
             </TouchableOpacity>
           </View>
 
-          <View style={styles.categoriesGrid}>
-            {MOCK_CATEGORIES.map((category) => (
-              <Animatable.View
-                key={category.id}
-                animation="fadeIn"
-                delay={300}
-              >
-                <TouchableOpacity
-                  style={[styles.categoryCard, { backgroundColor: category.color }]}
-                  onPress={() => onSelectCategory(category.id)}
+          <ScrollView 
+            contentContainerStyle={styles.scrollViewContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.categoriesGrid}>
+              {memoizedCategories.map((category, index) => (
+                <Animatable.View
+                  key={category.key}
+                  animation="fadeIn"
+                  delay={index * 100}
                 >
-                  <FontAwesome5 name={category.icon} size={32} color="#fff" />
-                  <Text style={styles.categoryName}>{category.name}</Text>
-                  <Text style={styles.categoryDescription}>
-                    {category.description}
-                  </Text>
-                </TouchableOpacity>
-              </Animatable.View>
-            ))}
-          </View>
+                  <TouchableOpacity
+                    style={[styles.categoryCard, { backgroundColor: category.color }]}
+                    onPress={() => onSelectCategory(category)}
+                  >
+                    <FontAwesome5 name={category.icon} size={32} color="#fff" />
+                    <Text style={styles.categoryName}>{category.nom}</Text>
+                    <Text style={styles.categoryDescription}>
+                      {category.description}
+                    </Text>
+                  </TouchableOpacity>
+                </Animatable.View>
+              ))}
+            </View>
+          </ScrollView>
         </Animatable.View>
       </View>
     </Modal>
@@ -88,7 +120,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    minHeight: height * 0.7,
+    height: height * 0.7, // Changed from minHeight to height
     padding: 20,
     ...Platform.select({
       ios: {
@@ -152,5 +184,8 @@ const styles = StyleSheet.create({
     marginTop: 5,
     textAlign: 'center',
     opacity: 0.9,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
   },
 });

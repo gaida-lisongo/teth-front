@@ -28,7 +28,7 @@ export default function Home() {
 
   const handleSelectCategory = (categoryId: string) => {
     setCategoryModalVisible(false);
-    // console.log('Catégorie sélectionnée:', categoryId);
+    console.log('Catégorie sélectionnée:', categoryId);
   };
 
   useEffect(() => {
@@ -131,7 +131,7 @@ export default function Home() {
     return () => {
       socketService.offCagnoteUpdate();
     };
-  }, [socketService]);
+  }, []);
   return (
     <View 
     style={styles.container}
