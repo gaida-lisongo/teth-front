@@ -1,11 +1,17 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, Platform, TouchableOpacity } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '@/contexts';
+import { socketService } from '@/services/socket';
+import { DepositModal } from '@/components/modals/DepositModal';
+import { WithdrawModal } from '@/components/modals/WithdrawModal';
+import { CustomButton } from '@/components/buttons';
+import { API_URL } from '@/api/config';
+import { COLORS } from '@/constants/theme';
 
 type Transaction = {
-  type: 'deposit' | 'withdrawal' | 'game';
+  type: string;
   amount: number;
   date: string;
   status: 'success' | 'pending' | 'failed';
@@ -33,15 +39,64 @@ const MOCK_TRANSACTIONS: Transaction[] = [
 ];
 
 export default function Transactions() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [depositModalVisible, setDepositModalVisible] = useState(false);
+  const [withdrawModalVisible, setWithdrawModalVisible] = useState(false);
+
+  useEffect(() => {
+    console.log("getting data from server")
+    if (user?._id) {
+      socketService.emitDeposits({ userId: user._id });
+    }
+    
+    // Fetch user transactions
+    socketService.onDeposits((response) => {
+      console.log('Transactions:', response);
+      if (response.status == 200) {
+        const allDeposits = response.deposits.map((deposit: any) => ({
+          type: "Dépot",
+          amount: deposit.montant,
+          date: deposit.createdAt,
+          status: deposit.status == 'accepté' ? 'success' : 'pending',
+          })
+        );
+
+        const allWithdrawals = user?.retraits?.map((retrait: any) => ({
+          type: "Rétrait",
+          amount: retrait.montant,
+          date: retrait.dateCreated,
+          status: retrait.refTransaction ? 'success' : 'pending',
+        })) || [];
+        
+        setTransactions([...allWithdrawals]);
+        console.log("allRetry", allWithdrawals)
+        setTransactions(prev => [...prev, ...allDeposits]);
+        
+      }
+    });
+
+    console.log(user)
+    return () => {
+      socketService.offDeposits();
+      
+    };
+  }, [socketService]);
+
+  /* 
+  1. ordre des transactions par date
+  */
+  const sortedTransactions = transactions.sort((a, b) => {
+    return new Date(b.date).getTime() - new Date(a.date).getTime();
+  });
 
   const renderTransaction = ({ item }: { item: Transaction }) => {
     const isPositive = item.amount > 0;
     
     const getIcon = () => {
       switch (item.type) {
-        case 'deposit': return 'arrow-down';
-        case 'withdrawal': return 'arrow-up';
+        case 'Dépot': return 'arrow-down';
+        case 'Rétrait': return 'arrow-up';
         case 'game': return 'gamepad';
       }
     };
@@ -52,6 +107,16 @@ export default function Transactions() {
         case 'pending': return '#FFA500';
         case 'failed': return '#FF3B30';
       }
+    };
+
+    const formatDateTime = (dateString: string) => {
+      const date = new Date(dateString);
+      const formattedDate = date.toLocaleDateString();
+      const formattedTime = date.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      return `${formattedDate} à ${formattedTime}`;
     };
 
     return (
@@ -65,7 +130,7 @@ export default function Transactions() {
             {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
           </Text>
           <Text style={styles.transactionDate}>
-            {new Date(item.date).toLocaleDateString()}
+            {formatDateTime(item.date)}
           </Text>
         </View>
         
@@ -79,6 +144,72 @@ export default function Transactions() {
     );
   };
 
+  const handleDeposit = () => {
+    setDepositModalVisible(true);
+  };
+
+  const handleWithdraw = () => {
+    setWithdrawModalVisible(true);
+  };
+
+  const handleConfirmDeposit = async (phone: string, amount: number) => {
+    try {
+      const response = await fetch(`${API_URL}/home/deposit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phone,
+          amount,
+          pseudo: user?.pseudo,
+          userId: user?._id
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.status === 200) {
+        setUser(prev => prev ? { ...prev, porteMonnaie: result.data.porteMonnaie } : prev);
+        return result.data;
+      } else {
+        throw new Error(result.message || 'Échec du dépôt');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      throw new Error("Une erreur est survenue lors du dépôt");
+    }
+  };
+
+  const handleConfirmWithdraw = async (phone: string, amount: number) => {
+    try {
+      const response = await fetch(`${API_URL}/home/withdraw`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phone,
+          amount,
+          pseudo: user?.pseudo,
+          userId: user?._id
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.status === 200) {
+        setUser(prev => prev ? { ...prev, porteMonnaie: result.data.porteMonnaie } : prev);
+        return result.data;
+      } else {
+        throw new Error(result.message || 'Échec du retrait');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      throw new Error("Une erreur est survenue lors du retrait");
+    }
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
@@ -89,13 +220,43 @@ export default function Transactions() {
           <Text style={styles.balanceLabel}>Solde actuel</Text>
           <Text style={styles.balance}>{user?.solde} FC</Text>
         </View>
+        
+        <View style={styles.actionButtons}>
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.depositButton]} 
+            onPress={() => handleDeposit()}
+          >
+            <FontAwesome5 name="arrow-down" size={20} color={COLORS.white} />
+            <Text style={styles.actionButtonText}>Dépôt</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.withdrawButton]} 
+            onPress={() => handleWithdraw()}
+          >
+            <FontAwesome5 name="arrow-up" size={20} color={COLORS.white} />
+            <Text style={styles.actionButtonText}>Retrait</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <FlatList
-        data={MOCK_TRANSACTIONS}
+      {sortedTransactions && <FlatList
+        data={sortedTransactions}
         renderItem={renderTransaction}
         keyExtractor={(item, index) => index.toString()}
         contentContainerStyle={styles.transactionsList}
+      />}
+
+      <DepositModal
+        visible={depositModalVisible}
+        onClose={() => setDepositModalVisible(false)}
+        onConfirm={handleConfirmDeposit}
+      />
+
+      <WithdrawModal
+        visible={withdrawModalVisible}
+        onClose={() => setWithdrawModalVisible(false)}
+        onConfirm={handleConfirmWithdraw}
+        userBalance={user?.solde || 0}
       />
     </View>
   );
@@ -163,9 +324,10 @@ const styles = StyleSheet.create({
     color: '#2d3748',
   },
   transactionDate: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#8892b0',
-    marginTop: 2,
+    marginTop: 4,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   transactionAmount: {
     alignItems: 'flex-end',
@@ -179,5 +341,37 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     marginTop: 5,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+    paddingHorizontal: 10,
+    gap: 15,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  depositButton: {
+    backgroundColor: '#4BB543',  // Green color for deposit
+  },
+  withdrawButton: {
+    backgroundColor: '#FF3B30',  // Red color for withdraw
+  },
+  actionButtonText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

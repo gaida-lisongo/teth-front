@@ -10,6 +10,7 @@ import {
 import { Audio } from 'expo-av';
 import { COLORS, SHADOWS } from '@/constants/theme';
 import * as Animatable from 'react-native-animatable';
+import { color } from 'react-native-elements/dist/helpers';
 
 interface CustomButtonProps {
   title: string;
@@ -33,7 +34,7 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
   textStyle,
 }) => {
   const [sound, setSound] = React.useState<Audio.Sound>();
-
+  console.log('loading', isLoading);
   useEffect(() => {
     return sound
       ? () => {
@@ -71,7 +72,7 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
     styles.text,
     styles[`${variant}Text`],
     disabled && styles.disabledText,
-    textStyle,
+    textStyle
   ];
 
   return (
@@ -132,6 +133,7 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 16,
     fontWeight: '600',
+    color: COLORS.white,
   },
   primaryText: {
     color: COLORS.white,

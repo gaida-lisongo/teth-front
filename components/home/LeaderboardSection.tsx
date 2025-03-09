@@ -2,18 +2,20 @@ import { View, Text, StyleSheet, Platform } from 'react-native';
 import * as Animatable from 'react-native-animatable';
 import { MOCK_LEADERBOARD } from '@/constants/data';
 
-export const LeaderboardSection = () => (
-  <Animatable.View animation="fadeInUp" delay={1200} style={styles.container}>
+export const LeaderboardSection = ({ ranking } : {ranking: {id: number; pseudo: string, score: number}[]}) => {
+  console.log(ranking);
+
+  return (<Animatable.View animation="fadeInUp" delay={1200} style={styles.container}>
         <Text style={styles.sectionTitle}>Classement</Text>
-        {MOCK_LEADERBOARD.map((player, index) => (
+        {ranking.map((player, index) => (
             <View key={player.id} style={styles.leaderboardItem}>
                 <Text style={styles.rank}>#{index + 1}</Text>
                 <Text style={styles.playerName}>{player.pseudo}</Text>
-                <Text style={styles.playerScore}>{player.score} FC</Text>
+                <Text style={styles.playerScore}>{player.score} Quizz</Text>
             </View>
         ))}
-  </Animatable.View>
-);
+  </Animatable.View>);
+};
 
 const styles = StyleSheet.create({
   container: {

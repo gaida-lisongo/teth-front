@@ -1,11 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useAuth } from '@/contexts';
 import { StatusBar } from 'expo-status-bar';
+import  { DepositModal } from '@/components/modals/DepositModal';
+import { API_URL } from '@/api/config';
+import { socketService } from '@/services/socket';
 
 export default function Profile() {
-  const { user, logout } = useAuth();
+  const { user, logout, setUser } = useAuth();
+  const [depositModalVisible, setDepositModalVisible] = React.useState(false);
 
   const menuItems = [
     { icon: 'user-edit', title: 'Modifier le profil', action: () => {} },
@@ -15,6 +19,26 @@ export default function Profile() {
     { icon: 'shield-alt', title: 'Confidentialité', action: () => {} },
     { icon: 'sign-out-alt', title: 'Déconnexion', action: logout },
   ];
+
+  const handleDeposit = () => {
+    console.log('Déposer de l\'argent');
+    setDepositModalVisible(true);
+  }
+  
+  const handleConfirmDeposit = async (phone: string, amount: number) => {
+    if (!user?._id || !user?.pseudo) {
+      return;
+    }
+
+    const payload = {
+      phone,
+      amount,
+      userId: user._id,
+      pseudo: user.pseudo,
+    };
+
+    socketService.emitDeposit(payload);
+  };
 
   return (
     <View style={styles.container}>
@@ -28,10 +52,10 @@ export default function Profile() {
 
       <ScrollView style={styles.content}>
         <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
+          <TouchableOpacity style={styles.statItem} onPress={() => handleDeposit()}>
             <Text style={styles.statValue}>{user?.porteMonnaie} FC</Text>
             <Text style={styles.statLabel}>Porte Monnaie</Text>
-          </View>
+          </TouchableOpacity>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{user?.pieces}</Text>
             <Text style={styles.statLabel}>Pièces</Text>
@@ -52,6 +76,12 @@ export default function Profile() {
           ))}
         </View>
       </ScrollView>
+
+      <DepositModal 
+        visible={depositModalVisible}
+        onClose={() => setDepositModalVisible(false)}
+        onConfirm={handleConfirmDeposit}
+      />
     </View>
   );
 }
@@ -134,5 +164,11 @@ const styles = StyleSheet.create({
     marginLeft: 15,
     fontSize: 16,
     color: '#2d3748',
+  },
+  errorText: {
+    color: '#FF3B30',
+    marginTop: 10,
+    fontSize: 14,
+    textAlign: 'center',
   },
 });

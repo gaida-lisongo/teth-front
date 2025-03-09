@@ -23,12 +23,12 @@ export const StatsSection: React.FC<StatsSectionProps> = ({
         </View>
         <View style={[styles.statItem, styles.statItemCorrect]}>
             <FontAwesome5 name="check-circle" size={24} color="#fff" />
-            <Text style={styles.statValue}>{correctAnswers}</Text>
+            <Text style={styles.statValue}>{correctAnswers}%</Text>
             <Text style={styles.statLabel}>Bonnes réponses</Text>
         </View>
         <View style={[styles.statItem, styles.statItemWrong]}>
             <FontAwesome5 name="times-circle" size={24} color="#fff" />
-            <Text style={styles.statValue}>{wrongAnswers}</Text>
+            <Text style={styles.statValue}>{wrongAnswers}%</Text>
             <Text style={styles.statLabel}>Mauvaises réponses</Text>
         </View>
         </View>

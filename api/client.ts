@@ -57,6 +57,10 @@ export const api = {
         body: JSON.stringify(body),
         requiresAuth: false,
       }),
+    get: (endpoint: string) => 
+      fetchClient(endpoint, { 
+        method: 'GET',
+      }),
   },
 
   // Requêtes authentifiées (avec token)

@@ -17,46 +17,46 @@ export const MOCK_TOKENS = [
   {
     id: '1',
     name: 'Jeton Etoile',
-    description: '10 pièces + 3 offertes',
-    price: 5000,
-    pieces: 10,
-    bonus: 3,
+    description: '2 pièces',
+    price: 1000,
+    pieces: 2,
+    bonus: 0,
     icon: 'star'
   },
   {
     id: '2',
     name: 'Jeton Diamant',
-    description: '25 pièces + 5 offertes',
-    price: 12500,
-    pieces: 25,
-    bonus: 5,
+    description: '10 pièces + 2 offertes',
+    price: 5000,
+    pieces: 10,
+    bonus: 2,
     icon: 'diamond'
   },
   {
     id: '3',
     name: 'Jeton Esengo',
-    description: '60 pièces + 10 offertes',
-    price: 30000,
-    pieces: 60,
-    bonus: 10,
+    description: '25 pièces +  5 offertes',
+    price: 12500,
+    pieces: 25,
+    bonus: 5,
     icon: 'crown'
   },
   {
     id: '4',
     name: 'Jeton Or',
-    description: '100 pièces + 20 offertes',
-    price: 50000,
-    pieces: 100,
-    bonus: 20,
+    description: '40 pièces + 7 offertes',
+    price: 20000,
+    pieces: 40,
+    bonus: 7,
     icon: 'trophy'
   },
   {
     id: '5',
     name: 'Jeton Platine',
-    description: '200 pièces + 50 offertes',
-    price: 100000,
-    pieces: 200,
-    bonus: 50,
+    description: '70 pièces + 10 offertes',
+    price: 35000,
+    pieces: 70,
+    bonus: 10,
     icon: 'award'
   }
 ];

@@ -1,29 +1,96 @@
-import { View, Text, ScrollView, StyleSheet, Dimensions, Platform } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Dimensions, Platform, TouchableOpacity } from 'react-native';
 import * as Animatable from 'react-native-animatable';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { MOCK_TOKENS } from '@/constants/data';
+import { useAuth } from '@/contexts';
+import { useState } from 'react';
+import { BuyTokenModal } from '@/components/modals/BuyTokenModal';
+import { router } from 'expo-router';
+import { API_URL } from '@/api/config';
 
 const { width } = Dimensions.get('window');
 
-export const TokensSection = () => (
-  <Animatable.View animation="fadeInUp" delay={900} style={styles.container}>
-    <Text style={styles.sectionTitle}>Acheter des jetons</Text>
-    <ScrollView 
-    horizontal 
-    showsHorizontalScrollIndicator={false}
-    style={styles.tokensList}
-    >
-    {MOCK_TOKENS.map((token) => (
-        <View key={token.id} style={styles.tokenCard}>
-        <FontAwesome5 name={token.icon} size={24} color="#041cd7" />
-        <Text style={styles.tokenName}>{token.name}</Text>
-        <Text style={styles.tokenDescription}>{token.description}</Text>
-        <Text style={styles.tokenPrice}>{token.price} FC</Text>
-        </View>
-    ))}
-    </ScrollView>
-  </Animatable.View>
-);
+interface Token {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  icon: string;
+  pieces: number;
+  bonus: number;
+}
+
+export const TokensSection = () => {
+  const { user, setUser } = useAuth();
+  const [selectedToken, setSelectedToken] = useState<Token | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  
+  const handleBuyToken = (token: Token): void => {
+    setSelectedToken(token);
+    setModalVisible(true);
+  };
+
+  const handleConfirmPurchase = async () => {
+    // Ici viendra la logique d'achat avec l'API
+    if (!selectedToken) return;
+    const payload = {
+      amount: selectedToken?.price,
+      pieces: selectedToken?.pieces + selectedToken?.bonus,
+      userId: user?._id,
+    }
+    console.log("Endoint: ", `${API_URL}/transactions/buyTokens`);
+
+    const request = await fetch(`${API_URL}/transactions/buyTokens`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const response = await request.json();
+    console.log(response);
+    if (response.status === 200) {
+      setUser(prev => ({ ...prev, porteMonnaie: response.data.porteMonnaie, pieces: response.data.pieces }));
+      setModalVisible(false);
+    }
+  };
+
+  const handleRecharge = () => {
+    setModalVisible(false);
+    router.push('/(tabs)/profile');
+  };
+
+  return (
+    <Animatable.View animation="fadeInUp" delay={900} style={styles.container}>
+      <Text style={styles.sectionTitle}>Acheter des jetons</Text>
+      <ScrollView 
+      horizontal 
+      showsHorizontalScrollIndicator={false}
+      style={styles.tokensList}
+      >
+      {MOCK_TOKENS.map((token) => (
+          <TouchableOpacity key={token.id} style={styles.tokenCard} onPress={() => handleBuyToken(token)}>
+            <FontAwesome5 name={token.icon} size={24} color="#041cd7" />
+            <Text style={styles.tokenName}>{token.name}</Text>
+            <Text style={styles.tokenDescription}>{token.description}</Text>
+            <Text style={styles.tokenPrice}>{token.price} FC</Text>
+          </TouchableOpacity>
+      ))}
+      </ScrollView>
+      {selectedToken && (
+        <BuyTokenModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          onConfirm={handleConfirmPurchase}
+          onRecharge={handleRecharge}
+          token={selectedToken}
+          userBalance={user?.porteMonnaie || 0}
+        />
+      )}
+    </Animatable.View>
+  );
+};
 
 const styles = StyleSheet.create({
     container: {

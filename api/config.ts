@@ -1,5 +1,5 @@
-export const API_URL = 'http://172.20.10.5:5000/api/v1'; // À remplacer par votre URL réelle
-
+export const API_URL = 'https://teth-server-latest.onrender.com/api/v1'; // À remplacer par votre URL réelle
+export const SOCKET_URL = 'wss://teth-server-latest.onrender.com'; // À remplacer par votre URL réelle
 export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: '/auth/login',
@@ -7,10 +7,8 @@ export const API_ENDPOINTS = {
     FORGOT_PASSWORD: '/auth/forgot-password',
   },
   GAME: {
-    CATEGORIES: '/game/categories',
-    QUESTIONS: '/game/questions',
-    SUBMIT_ANSWER: '/game/submit',
-    LEADERBOARD: '/game/leaderboard',
+    QUESTIONS: '/categories/',
+    WIN_GAME: '/transactions/creditSolde'
   },
   USER: {
     PROFILE: '/user/profile',
@@ -18,9 +16,13 @@ export const API_ENDPOINTS = {
     TRANSACTIONS: '/user/transactions',
   },
   WALLET: {
-    BALANCE: '/wallet/balance',
-    DEPOSIT: '/wallet/deposit',
-    WITHDRAW: '/wallet/withdraw',
-    BUY_TOKENS: '/wallet/buy-tokens',
+    DEPOSIT: '/home/deposit',
+    WITHDRAW: '/transactions/debitSolde',
+    BUY_TOKENS: '/transactions/buyTokens',
+  },
+  HOME : {
+    CAGNOTE: '/home',
+    CATEGORIES: '/home/categories',
+    LEADERS: '/home'
   },
 };

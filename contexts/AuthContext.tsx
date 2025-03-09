@@ -128,7 +128,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login, 
         register, 
         forgotPassword, 
-        logout 
+        logout ,
+        setUser
       }}
     >
       {children}
