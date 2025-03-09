@@ -50,9 +50,30 @@ export default function Transactions() {
       socketService.emitDeposits({ userId: user._id });
     }
     
+    const allWithdrawals = user?.retraits?.map((retrait: any) => ({
+      type: "Rétrait",
+      amount: retrait.montant,
+      date: retrait.dateCreated,
+      status: retrait.refTransaction ? 'success' : 'pending',
+    })) || [];
+
+    
+    /*
+    1. Checking if categories are already in the state transactions
+    2. If not, adding them to the state transactions
+    3. If it is already in the state transaction skip tonext item
+    */
+    const retraits = allWithdrawals.filter((retrait) => {
+      return !transactions.find((transaction) => transaction.type == "Rétrait" && transaction.date === retrait.date);
+    });
+
+    setTransactions(prev => [...prev, ...retraits]);
+    
+    // setTransactions([...allWithdrawals]);
+
     // Fetch user transactions
     socketService.onDeposits((response) => {
-      console.log('Transactions:', response);
+      // console.log('Transactions:', response);
       if (response.status == 200) {
         const allDeposits = response.deposits.map((deposit: any) => ({
           type: "Dépot",
@@ -62,26 +83,37 @@ export default function Transactions() {
           })
         );
 
-        const allWithdrawals = user?.retraits?.map((retrait: any) => ({
-          type: "Rétrait",
-          amount: retrait.montant,
-          date: retrait.dateCreated,
-          status: retrait.refTransaction ? 'success' : 'pending',
-        })) || [];
-        
-        setTransactions([...allWithdrawals]);
-        console.log("allRetry", allWithdrawals)
-        setTransactions(prev => [...prev, ...allDeposits]);
+        const depots = allDeposits.filter((depot) => {
+          return !transactions.find((transaction) => transaction.type == "Dépot" && transaction.date === depot.date);
+        });
+
+        setTransactions(prev => [...prev, ...depots]);
+        // console.log("allRetry", allWithdrawals)
+        // setTransactions(prev => [...prev, ...allDeposits]);
         
       }
     });
 
-    console.log(user)
+    socketService.onWithdraw((response) => {
+      console.log('Withdraw:', response);
+      
+      if (response.status == 200) {
+        const res = response.data;
+        setUser(prev => prev ? { ...prev, solde: res.solde, retraits: res.retraits } : prev);
+        // setTransactions(prev => [...prev, {
+        //   type: 'Rétrait',
+        //   amount: response.data.montant,
+        //   date: response.data.dateCreated,
+        //   status: 'pending',
+        // }]);
+      }
+    });
     return () => {
       socketService.offDeposits();
+      socketService.offWithdraw();
       
     };
-  }, [socketService]);
+  }, [socketService, user]);
 
   /* 
   1. ordre des transactions par date
@@ -182,32 +214,17 @@ export default function Transactions() {
   };
 
   const handleConfirmWithdraw = async (phone: string, amount: number) => {
-    try {
-      const response = await fetch(`${API_URL}/home/withdraw`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          phone,
-          amount,
-          pseudo: user?.pseudo,
-          userId: user?._id
-        }),
-      });
-
-      const result = await response.json();
-
-      if (result.status === 200) {
-        setUser(prev => prev ? { ...prev, porteMonnaie: result.data.porteMonnaie } : prev);
-        return result.data;
-      } else {
-        throw new Error(result.message || 'Échec du retrait');
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      throw new Error("Une erreur est survenue lors du retrait");
+    if (!user?.pseudo) {
+      throw new Error("User pseudo is required");
     }
+
+    const payload = {
+      phone: parseFloat(phone),
+      montant: amount,
+      pseudo: user.pseudo,
+    };
+
+    socketService.emitWithdraw(payload);
   };
 
   return (

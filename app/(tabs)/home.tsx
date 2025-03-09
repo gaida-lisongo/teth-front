@@ -119,6 +119,19 @@ export default function Home() {
     };
   }, [user?._id]);
 
+  useEffect(() => {
+    socketService.onCagnoteUpdate((resp) => {
+      if (resp.status == 200) {
+        console.log("Cagnote: ", parseFloat(resp.data.amount));
+        setCagnote(parseFloat(resp.data.amount));
+        
+      }
+    });
+
+    return () => {
+      socketService.offCagnoteUpdate();
+    };
+  }, [socketService]);
   return (
     <View 
     style={styles.container}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, View, Text, StyleSheet, TextInput, Alert } from 'react-native';
+import { Modal, View, Text, StyleSheet, TextInput, Alert, ScrollView } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { CustomButton } from '@/components/buttons/CustomButton';
@@ -58,82 +58,85 @@ export const WithdrawModal = ({ visible, onClose, onConfirm, userBalance }: With
     >
       <BlurView intensity={80} style={styles.overlay}>
         <View style={styles.modal}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Retrait d'argent</Text>
-            {!isLoading && (
-              <FontAwesome5 
-                name="times" 
-                size={20} 
-                color="#8892b0" 
-                onPress={onClose}
-              />
-            )}
-          </View>
+            <ScrollView style={{ paddingBottom: 50 }}>
+                <View style={styles.header}>
+                    <Text style={styles.title}>Retrait d'argent</Text>
+                    {!isLoading && (
+                    <FontAwesome5 
+                        name="times" 
+                        size={20} 
+                        color="#8892b0" 
+                        onPress={onClose}
+                    />
+                    )}
+                </View>
 
-          {isLoading ? (
-            <View style={styles.loadingContainer}>
-              <Countdown 
-                duration={60} 
-                onComplete={() => {
-                  setIsLoading(false);
-                  onClose();
-                }}
-              />
-              <Text style={styles.loadingText}>
-                Retrait en cours...
-              </Text>
-              <Text style={styles.processingText}>
-                Ne fermez pas l'application
-              </Text>
-            </View>
-          ) : (
-            <>
-              <View style={styles.balanceContainer}>
-                <Text style={styles.balanceLabel}>Solde disponible:</Text>
-                <Text style={styles.balance}>{userBalance} FC</Text>
-              </View>
+                {isLoading ? (
+                    <View style={styles.loadingContainer}>
+                    <Countdown 
+                        duration={60} 
+                        onComplete={() => {
+                        setIsLoading(false);
+                        onClose();
+                        }}
+                    />
+                    <Text style={styles.loadingText}>
+                        Retrait en cours...
+                    </Text>
+                    <Text style={styles.processingText}>
+                        Ne fermez pas l'application
+                    </Text>
+                    </View>
+                ) : (
+                    <>
+                    <View style={styles.balanceContainer}>
+                        <Text style={styles.balanceLabel}>Solde disponible:</Text>
+                        <Text style={styles.balance}>{userBalance} FC</Text>
+                    </View>
 
-              <View style={styles.inputContainer}>
-                <FontAwesome5 
-                  name="phone" 
-                  size={20} 
-                  color="#8892b0"
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Numéro de téléphone"
-                  keyboardType="phone-pad"
-                  value={phone}
-                  onChangeText={setPhone}
-                />
-              </View>
+                    <View style={styles.inputContainer}>
+                        <FontAwesome5 
+                        name="phone" 
+                        size={20} 
+                        color="#8892b0"
+                        style={styles.inputIcon}
+                        />
+                        <TextInput
+                        style={styles.input}
+                        placeholder="Numéro de téléphone"
+                        keyboardType="phone-pad"
+                        value={phone}
+                        onChangeText={setPhone}
+                        />
+                    </View>
 
-              <View style={styles.inputContainer}>
-                <FontAwesome5 
-                  name="money-bill" 
-                  size={20} 
-                  color="#8892b0"
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Montant (FC)"
-                  keyboardType="numeric"
-                  value={amount}
-                  onChangeText={setAmount}
-                />
-              </View>
+                    <View style={styles.inputContainer}>
+                        <FontAwesome5 
+                        name="money-bill" 
+                        size={20} 
+                        color="#8892b0"
+                        style={styles.inputIcon}
+                        />
+                        <TextInput
+                        style={styles.input}
+                        placeholder="Montant (FC)"
+                        keyboardType="numeric"
+                        value={amount}
+                        onChangeText={setAmount}
+                        />
+                    </View>
 
-              <CustomButton
-                title="Confirmer le retrait"
-                onPress={handleSubmit}
-                variant="primary"
-                size="large"
-                style={styles.button}
-              />
-            </>
-          )}
+                    <CustomButton
+                        title="Confirmer le retrait"
+                        onPress={handleSubmit}
+                        variant="primary"
+                        size="large"
+                        style={styles.button}
+                    />
+                    </>
+                )}
+
+            </ScrollView>
         </View>
       </BlurView>
     </Modal>

@@ -42,9 +42,13 @@ class SocketService {
     }
   }
 
-  public onCagnoteUpdate(callback: (amount: number) => void) {
-    this.socket.on('cagnote:update', callback);
+  public onCagnoteUpdate(callback: (payload: any) => void) {
+    this.socket.on('balance', callback);
   }
+
+  public offCagnoteUpdate() {
+    this.socket.off('balance');
+}
 
   public onLeaderboardUpdate(callback: (leaderboard: any[]) => void) {
     this.socket.on('leaderboard:update', callback);
@@ -68,10 +72,22 @@ class SocketService {
 
   public emitDeposits(payload: {userId: string}) {
     this.socket.emit('deposits', payload);  
-}
+ }
 
   public offDeposits() {
     this.socket.off('deposits');
+  }
+
+  public onWithdraw(callback: (payload: {userId: string; montant: number; status: string; dateCreated: Date; refTransaction: string}) => void) {
+    this.socket.on('withdraw', callback);
+  }
+
+  public emitWithdraw(payload: { montant: number; pseudo: string; phone: number}) {
+    this.socket.emit('withdraw', payload);
+  }
+
+  public offWithdraw() {
+    this.socket.off('withdraw');
   }
 }
 

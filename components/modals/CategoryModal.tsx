@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   Modal, 
   View, 
@@ -25,6 +25,13 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
   onClose,
   onSelectCategory,
 }) => {
+  useEffect(() => {
+    console.log('CategoryModal mounted');
+    return () => {
+      console.log('CategoryModal unmounted');
+    };
+  }, []);
+
   return (
     <Modal
       animationType="slide"
